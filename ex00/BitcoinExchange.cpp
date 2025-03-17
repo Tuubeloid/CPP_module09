@@ -86,13 +86,23 @@ void BitcoinExchange::readDatabase(const std::string &filename)
 			date;
 		double
 			value;
-		std::getline(iss, date, '|');
+		std::getline(iss, date, ',');
 		iss >> value;
 		database[date] = value;
 	}
 	file.close();
 }
 
+// Make checks to see if the date format is proper.
+// Year can be only 0 to this year
+// Month can only be 1-12
+// Day can only be 1-31
+// So the date is in format: 2012-01-11 | If theres any letters or other symbols or for example 2001-42-42 its 
+// Error: bad input => 2001-42-42
+// If value is negative:
+// Error: not a positive number.
+// If value is overflown:
+// Error: too large a number.
 void BitcoinExchange::readInput(const std::string &filename)
 {
 	std::ifstream
@@ -155,6 +165,7 @@ void BitcoinExchange::exchangeRate()
 
 void BitcoinExchange::display()
 {
+	/*
     for (auto &it : result)
     {
         auto inputIt = input.find(it.first);
@@ -181,6 +192,19 @@ void BitcoinExchange::display()
                   << std::fixed << std::setprecision(2)
                   << inputIt->second * it.second << std::endl;
     }
+	*/
+	for (auto &it : database)
+	{
+		std::cout << "Date in database: " << it.first <<  " : The rate in database: " << std::setprecision(10) << it.second << std::endl;
+	}
+	for (auto &it : input)
+	{
+		std::cout << "Date in input: " << it.first <<  " : The rate in input: " << std::setprecision(10) << it.second << std::endl;
+	}
+	for (auto &it : result)
+	{
+		std::cout << "Date in result: " << it.first <<  " : The rate in result: " << std::setprecision(10) << it.second << std::endl;
+	}
 }
 
 void BitcoinExchange::run(const std::string &filename)
