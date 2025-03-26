@@ -19,23 +19,29 @@ BitcoinExchange::~BitcoinExchange()
 
 void BitcoinExchange::readDatabase(const std::string &filename)
 {
-	std::ifstream
-		file(filename);
+	struct stat fileStat; 
+    if (stat(filename.c_str(), &fileStat) == 0) 
+    {
+        if (S_ISDIR(fileStat.st_mode)) 
+        {
+            std::cerr << "Error: the specified database is a directory, not a file." << std::endl;
+            return;
+        }
+    } else 
+    {
+        std::cerr << "Error: could not stat the file." << std::endl;
+        return;
+    }
+	std::ifstream file(filename);
 	if (!file.is_open())
-	{
 		throw std::runtime_error("Error 2: could not open file.");
-	}
-	std::string
-		line;
+	std::string line;
 	std::getline(file, line);	
 	while (std::getline(file, line))
 	{
-		std::istringstream
-			iss(line);
-		std::string
-			date;
-		double
-			value;
+		std::istringstream iss(line);
+		std::string date;
+		double value;
 		std::getline(iss, date, ',');
 		iss >> value;
 		database[date] = value;
@@ -144,10 +150,20 @@ void BitcoinExchange::readAndProcessInput(const std::string& filename)
 	std::ifstream file(filename);
 	if (!file.is_open())
 		throw std::runtime_error("Error: could not open input file.");
+	int i = 0;
 	std::string line;
-	std::getline(file, line);
 	while (std::getline(file, line))
 	{
+		if (i == 0)
+		{
+			// add check if the first line is header in form: "date | value"
+			trim(line);
+			if (line != "date | value")
+				std::cerr << "Error: bad or missing header." << std::endl;
+			else
+				std::getline(file, line);
+			++i;
+		}
 		std::istringstream iss(line);
 		std::string dateStr;
 		double value;
@@ -167,6 +183,12 @@ void BitcoinExchange::readAndProcessInput(const std::string& filename)
 			std::cerr << "Error: bad input => " << dateStr << std::endl;
 			continue;
 		}
+	    std::string remaining;
+        if (iss >> remaining) 
+        {
+            std::cerr << "Error: bad input => " << line << std::endl;
+            continue;
+        }
 		if (value < 0)
 		{
 			std::cerr << "Error: not a positive number." << std::endl;
