@@ -156,17 +156,27 @@ std::string BitcoinExchange::trim(const std::string& str)
 	return str.substr(start, end - start + 1);
 }
 
-// Make checks to see if the date format is proper.
-// Year can be only 0 to this year
-// Month can only be 1-12
-// Day can only be 1-31
-// So the date is in format: 2012-01-11 | If theres any letters or other symbols or for example 2001-42-42 its 
-// Error: bad input => 2001-42-42
-// If value is negative:
-// Error: not a positive number.
-// If value is overflown:
-// Error: too large a number.
-void BitcoinExchange::readInput(const std::string& filename)
+std::string BitcoinExchange::findClosestDate(const std::string& date)
+{
+	auto it = database.find(date);
+	if (it != database.end())
+		return it->first;
+
+	auto upper = database.upper_bound(date);
+	if (upper == database.begin())
+		return database.begin()->first;
+
+	auto lower = std::prev(upper);
+	if (upper == database.end())
+		return lower->first;
+
+	if (upper->first == date)
+		return upper->first;
+
+	return lower->first;
+}
+
+void BitcoinExchange::readAndProcessInput(const std::string& filename)
 {
 	std::ifstream file(filename);
 	if (!file.is_open())
@@ -176,108 +186,48 @@ void BitcoinExchange::readInput(const std::string& filename)
 	while (std::getline(file, line)) {
 		std::istringstream iss(line);
 		std::string dateStr;
-		float value;
+		double value;
 		if (!std::getline(iss, dateStr, '|')) {
-			input.push_back(std::make_pair(line, "Error: bad input => " + line));
+			//input.push_back(std::make_pair(line, "Error: bad input => " + line));
+			std::cerr << "Error: bad input => " << line << std::endl;
 			continue;
 		}
 		dateStr = trim(dateStr);
 		if (!(iss >> value)) {
-			input.push_back(std::make_pair(dateStr, "Error: bad input => " + line));
+			//input.push_back(std::make_pair(dateStr, "Error: bad input => " + line));
+			std::cerr << "Error: bad input => " << line << std::endl;
 			continue;
 		}
 		if (!isValidDateFormat(dateStr) || !isValidDateValue(dateStr)) {
-			input.push_back(std::make_pair(dateStr, "Error: bad input => " + dateStr));
+			//input.push_back(std::make_pair(dateStr, "Error: bad input => " + dateStr));
+			std::cerr << "Error: bad input => " << dateStr << std::endl;
 			continue;
 		}
 		if (value < 0) {
-			input.push_back(std::make_pair(dateStr, "Error: not a positive number."));
+			//input.push_back(std::make_pair(dateStr, "Error: not a positive number."));
+			std::cerr << "Error: not a positive number." << std::endl;
 			continue;
 		}
-		if (value > INT_MAX) {
-			input.push_back(std::make_pair(dateStr, "Error: too large a number."));
+		if (value > 1000) {
+			//input.push_back(std::make_pair(dateStr, "Error: too large a number."));
+			std::cerr << "Error: too large a number." << std::endl;
 			continue;
 		}
-		std::ostringstream oss;
-		oss << value;
-		input.push_back(std::make_pair(dateStr, oss.str()));
-	}
-
-	file.close();
-}
-
-void BitcoinExchange::exchangeRate()
-{
-	for (auto &it : input)
-	{
-		auto upper = database.upper_bound(it.first);
-		if (upper == database.begin())
-			result[it.first] = 0;
-		else
+		std::string closestDate = findClosestDate(dateStr);
+		if (closestDate.empty())
 		{
-			auto lower = std::prev(upper);
-			if (upper == database.end())
-				result[it.first] = lower->second;
-			else
-			{
-				if (upper->first == it.first)
-					result[it.first] = upper->second;
-				else
-					result[it.first] = lower->second;
-			}
+			std::cerr << "Error: no matching date found." << std::endl;
+			continue;
 		}
+		std::cout << closestDate << " => " << value << " = " << value * database[closestDate] << std::endl;
 	}
-}
-
-void BitcoinExchange::display()
-{
-	/*
-    for (auto &it : result)
-    {
-        auto inputIt = input.find(it.first);
-        
-        if (inputIt == input.end())
-        {
-            std::cerr << "Error: No matching input found for date: " << it.first << std::endl;
-            continue;
-        }
-
-        if (inputIt->second < 0)
-        {
-            std::cerr << "Error: not a positive number." << std::endl;
-            continue;
-        }
-        else if (inputIt->second > 1000)
-        {
-            std::cerr << "Error: too large a number." << std::endl;
-            continue;
-        }
-
-        // Correctly output the exchange rate calculation
-        std::cout << it.first << " => " << inputIt->second << " = "
-                  << std::fixed << std::setprecision(2)
-                  << inputIt->second * it.second << std::endl;
-    }
-	*/
-	for (auto &it : database)
-	{
-		std::cout << "Date in database: " << it.first <<  " : The rate in database: " << std::setprecision(10) << it.second << std::endl;
-	}
-	for (auto &it : input)
-	{
-		std::cout << "Date in input: " << it.first <<  " : The rate in input: " << std::setprecision(10) << it.second << std::endl;
-	}
-	for (auto &it : result)
-	{
-		std::cout << "Date in result: " << it.first <<  " : The rate in result: " << std::setprecision(10) << it.second << std::endl;
-	}
+	file.close();
 }
 
 void BitcoinExchange::run(const std::string &filename)
 {
 	readDatabase("data.csv");
-	readInput(filename);
-	exchangeRate();
+	readAndProcessInput(filename);
 	display();
 }
 

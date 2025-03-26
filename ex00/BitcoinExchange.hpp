@@ -74,16 +74,15 @@ public:
 	BitcoinExchange &operator=(const BitcoinExchange &other);
 	~BitcoinExchange();
 	void readDatabase(const std::string &filename);
-	void readInput(const std::string &filename);
-	void exchangeRate();
-	void display();
+	void readAndProcessInput(const std::string &filename);
 	void run(const std::string &filename);
 	bool isValidDateValue(const std::string& date);
 	bool isValidDateFormat(const std::string& date);
+	std::string findClosestDate(const std::string& date);
 	std::string trim(const std::string& str);
 
 private:
 	std::map<std::string, double> database;
 	std::vector<std::pair<std::string, std::string> > input;
-	std::map<std::string, double> result;
+	std::vector<std::pair<std::string, std::string> > result;
 };
