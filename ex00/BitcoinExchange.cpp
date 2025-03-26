@@ -171,26 +171,21 @@ void BitcoinExchange::readInput(const std::string& filename)
 	std::ifstream file(filename);
 	if (!file.is_open())
 		throw std::runtime_error("Error: could not open input file.");
-
 	std::string line;
-	std::getline(file, line); // skip header
-
+	std::getline(file, line);
 	while (std::getline(file, line)) {
 		std::istringstream iss(line);
 		std::string dateStr;
-		double value;
-
+		float value;
 		if (!std::getline(iss, dateStr, '|')) {
 			input.push_back(std::make_pair(line, "Error: bad input => " + line));
 			continue;
 		}
 		dateStr = trim(dateStr);
-
 		if (!(iss >> value)) {
 			input.push_back(std::make_pair(dateStr, "Error: bad input => " + line));
 			continue;
 		}
-
 		if (!isValidDateFormat(dateStr) || !isValidDateValue(dateStr)) {
 			input.push_back(std::make_pair(dateStr, "Error: bad input => " + dateStr));
 			continue;
@@ -203,8 +198,6 @@ void BitcoinExchange::readInput(const std::string& filename)
 			input.push_back(std::make_pair(dateStr, "Error: too large a number."));
 			continue;
 		}
-
-		// Valid value → convert to string and store
 		std::ostringstream oss;
 		oss << value;
 		input.push_back(std::make_pair(dateStr, oss.str()));
