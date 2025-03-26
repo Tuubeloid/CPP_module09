@@ -52,6 +52,7 @@ longer be usable for the rest of this module.
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <map>
 #include <sstream>
@@ -60,6 +61,11 @@ longer be usable for the rest of this module.
 #include <exception>
 #include <sys/stat.h>
 #include <regex>
+#include <ctime>
+#include <climits>
+#include <cstdlib>
+#include <cctype>
+#include <vector>
 
 class BitcoinExchange
 {
@@ -72,9 +78,12 @@ public:
 	void exchangeRate();
 	void display();
 	void run(const std::string &filename);
+	bool isValidDateValue(const std::string& date);
+	bool isValidDateFormat(const std::string& date);
+	std::string trim(const std::string& str);
 
 private:
 	std::map<std::string, double> database;
-	std::map<std::string, double> input;
+	std::vector<std::pair<std::string, std::string> > input;
 	std::map<std::string, double> result;
 };
