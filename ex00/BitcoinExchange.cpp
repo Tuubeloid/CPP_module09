@@ -210,30 +210,20 @@ void BitcoinExchange::exchangeRate()
 {
 	for (auto &it : input)
 	{
-		auto
-			upper = database.upper_bound(it.first);
+		auto upper = database.upper_bound(it.first);
 		if (upper == database.begin())
-		{
 			result[it.first] = 0;
-		}
 		else
 		{
-			auto
-				lower = std::prev(upper);
+			auto lower = std::prev(upper);
 			if (upper == database.end())
-			{
 				result[it.first] = lower->second;
-			}
 			else
 			{
 				if (upper->first == it.first)
-				{
 					result[it.first] = upper->second;
-				}
 				else
-				{
 					result[it.first] = lower->second;
-				}
 			}
 		}
 	}
